@@ -128,6 +128,11 @@ main {
   .story {
     grid-template-columns: 1fr;
   }
+
+  .story-media {
+    flex-direction: row;
+    align-items: center;
+  }
 }
 
 @keyframes fade-in {
@@ -135,8 +140,36 @@ main {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.story-media {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.story-thumb {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--default-tag);
+  border-radius: 4px;
+}
+
+.story-thumb svg {
+  width: 28px;
+  height: 28px;
+}
+
+.story-thumb.dining { background: var(--dining); }
+.story-thumb.weather { background: var(--weather); }
+.story-thumb.transit { background: var(--transit); }
+.story-thumb.newman-library-rooms { background: var(--library); }
+
 .story .tag {
-  align-self: start;
+  align-self: center;
   font-family: 'Courier New', monospace;
   font-size: 10px;
   text-transform: uppercase;

@@ -27,6 +27,18 @@ function tagClass(source) {
     : 'default';
 }
 
+const SOURCE_ICONS = {
+  dining: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2 2 0 0 0 4 0V3M6 9v12"/><path d="M18 3c-1.7 0-3 2-3 5s1.3 5 3 5M18 3v18"/></svg>',
+  weather: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>',
+  transit: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="11" rx="2"/><path d="M3 11h18M7 16v2M17 16v2"/><circle cx="7.5" cy="16" r="0.8" fill="white" stroke="none"/><circle cx="16.5" cy="16" r="0.8" fill="white" stroke="none"/></svg>',
+  'newman-library-rooms': '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z"/><path d="M20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z"/></svg>',
+  default: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M7 9h6M7 13h10M7 16h10"/></svg>',
+};
+
+function sourceIcon(source) {
+  return SOURCE_ICONS[source] || SOURCE_ICONS.default;
+}
+
 async function shareHeadline(headline, button) {
   const shareText = `${headline.headline}\n\n${headline.blurb}`;
   const shareUrl = window.location.href;
@@ -56,9 +68,18 @@ function renderHeadline(headline, isNew) {
   const el = document.createElement('article');
   el.className = 'story' + (isNew ? ' is-new' : '');
 
+  const media = document.createElement('div');
+  media.className = 'story-media';
+
+  const thumb = document.createElement('div');
+  thumb.className = `story-thumb ${tagClass(headline.source)}`;
+  thumb.innerHTML = sourceIcon(headline.source);
+
   const tag = document.createElement('span');
   tag.className = `tag ${tagClass(headline.source)}`;
   tag.textContent = headline.source;
+
+  media.append(thumb, tag);
 
   const body = document.createElement('div');
 
@@ -83,7 +104,7 @@ function renderHeadline(headline, isNew) {
 
   footerRow.append(meta, shareBtn);
   body.append(h2, p, footerRow);
-  el.append(tag, body);
+  el.append(media, body);
 
   return el;
 }
