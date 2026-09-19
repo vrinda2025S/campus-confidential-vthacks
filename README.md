@@ -13,7 +13,7 @@ Campus Confidential turns live Virginia Tech campus data into funny, tabloid-sty
 - Sends meaningful changes to Gemini along with the Campus Confidential character cast and recent headlines.
 - Shows the latest headlines in a responsive tabloid feed that refreshes every 15 seconds.
 - Lets visitors share a headline using the device share sheet or a copy-to-clipboard fallback.
-- Includes **HokieAI Sidekick**, a three-question mini-chat: students describe what they need in their own words, choose a campus pulse, and get one personalized result using current public facts. Transit results also show live BT route, movement, crowding, and map-location links.
+- Includes **The Tip Line**, a quick campus Q&A: pick a category (study rooms, dining, buses, or weather) and get the real current specifics — exact room names, exact open dining spots, exact bus routes and occupancy — plus one short in-character reaction line from Gemini.
 
 ## Live data sources
 
@@ -26,7 +26,7 @@ The app does not claim to know physical dining-line lengths or whether someone i
 
 ## Character cast
 
-Dining locations and campus systems become recurring characters: Dietrick, Owens, Deet's, DX, Xpress Lane, Dunkin', Squires, West End, Hokie Grill, Perry Place, Turner Place, Blacksburg Transit, Newman Library, and the weather itself.
+Dining locations and campus systems become recurring characters: Dietrick, Owens, Deet's, DX, Xpress Lane, Dunkin', Squires, West End, Hokie Grill, Perry Place, Turner Place, Qdoba, Blacksburg Transit, Newman Library, and the weather itself.
 
 ## Built with
 
