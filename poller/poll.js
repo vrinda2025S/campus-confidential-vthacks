@@ -1,12 +1,15 @@
 const cron = require('node-cron');
 const connectDB = require('../config/db');
 const Snapshot = require('../models/Snapshot');
+const Headline = require('../models/Headline');
+const { generateHeadline } = require('../ai/gemini');
 const getWeather = require('../data-sources/weather');
 const getDining = require('../data-sources/dining');
 const getTransit = require('../data-sources/transit');
 const getNewmanRooms = require('../data-sources/rooms');
 
 const POLL_SCHEDULE = process.env.POLL_SCHEDULE || '*/3 * * * *';
+const HEADLINE_HISTORY_LIMIT = 5;
 
 const dataSources = [
   { name: 'weather', fetch: getWeather },
@@ -16,6 +19,16 @@ const dataSources = [
 ];
 
 let pollInProgress = false;
+
+// Most-recent-last, for Gemini's continuity callbacks.
+async function getRecentHeadlineHistory() {
+  const recent = await Headline.find()
+    .sort({ createdAt: -1 })
+    .limit(HEADLINE_HISTORY_LIMIT)
+    .lean();
+
+  return recent.reverse().map((h) => h.headline);
+}
 
 async function pollOnce() {
   if (pollInProgress) {
@@ -27,6 +40,8 @@ async function pollOnce() {
   console.log(`Polling ${dataSources.length} live campus data sources...`);
 
   try {
+    const recentHistory = await getRecentHeadlineHistory();
+
     const results = await Promise.all(
       dataSources.map(async ({ name, fetch }) => {
         try {
@@ -37,7 +52,35 @@ async function pollOnce() {
           });
 
           console.log(`Saved ${name} snapshot: ${snapshot._id}`);
-          return { source: name, success: true, snapshotId: snapshot._id.toString() };
+
+          const dataEvent = { source: snapshot.source, ...value };
+          const generated = await generateHeadline(dataEvent, recentHistory);
+
+          if (!generated) {
+            console.log(`No headline generated for ${name} (Gemini call failed or returned nothing).`);
+            return {
+              source: name,
+              success: true,
+              snapshotId: snapshot._id.toString(),
+              headlineGenerated: false,
+            };
+          }
+
+          const headlineDoc = await Headline.create({
+            headline: generated.headline,
+            blurb: generated.blurb,
+            source: snapshot.source,
+            dataEvent,
+          });
+
+          console.log(`Saved headline for ${name}: "${generated.headline}" (${headlineDoc._id})`);
+          return {
+            source: name,
+            success: true,
+            snapshotId: snapshot._id.toString(),
+            headlineId: headlineDoc._id.toString(),
+            headlineGenerated: true,
+          };
         } catch (error) {
           console.error(`Failed to poll ${name}: ${error.message}`);
           return { source: name, success: false, error: error.message };
