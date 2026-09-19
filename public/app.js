@@ -22,18 +22,64 @@ function tagClass(source) {
     : 'default';
 }
 
+async function shareHeadline(headline, button) {
+  const shareText = `${headline.headline}\n\n${headline.blurb}`;
+  const shareUrl = window.location.href;
+
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'Campus Confidential', text: shareText, url: shareUrl });
+      return;
+    }
+    await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+    const original = button.textContent;
+    button.textContent = 'Copied!';
+    button.disabled = true;
+    setTimeout(() => {
+      button.textContent = original;
+      button.disabled = false;
+    }, 1500);
+  } catch (err) {
+    // AbortError fires when the user just closes the native share sheet — not a real failure.
+    if (err.name !== 'AbortError') {
+      console.error('Share failed:', err.message);
+    }
+  }
+}
+
 function renderHeadline(headline, isNew) {
   const el = document.createElement('article');
   el.className = 'story' + (isNew ? ' is-new' : '');
 
-  el.innerHTML = `
-    <span class="tag ${tagClass(headline.source)}">${headline.source}</span>
-    <div>
-      <h2>${headline.headline}</h2>
-      <p>${headline.blurb}</p>
-      <div class="meta">${relativeTime(headline.createdAt)}</div>
-    </div>
-  `;
+  const tag = document.createElement('span');
+  tag.className = `tag ${tagClass(headline.source)}`;
+  tag.textContent = headline.source;
+
+  const body = document.createElement('div');
+
+  const h2 = document.createElement('h2');
+  h2.textContent = headline.headline;
+
+  const p = document.createElement('p');
+  p.textContent = headline.blurb;
+
+  const footerRow = document.createElement('div');
+  footerRow.className = 'story-footer';
+
+  const meta = document.createElement('span');
+  meta.className = 'meta';
+  meta.textContent = relativeTime(headline.createdAt);
+
+  const shareBtn = document.createElement('button');
+  shareBtn.className = 'share-btn';
+  shareBtn.type = 'button';
+  shareBtn.textContent = 'Share';
+  shareBtn.addEventListener('click', () => shareHeadline(headline, shareBtn));
+
+  footerRow.append(meta, shareBtn);
+  body.append(h2, p, footerRow);
+  el.append(tag, body);
+
   return el;
 }
 

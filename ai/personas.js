@@ -24,7 +24,7 @@ const CHARACTERS = {
       'Talks like it peaked in a previous era and is still coasting on the vibes',
     ],
     catchphrases: ['I was slammed before slammed was cool.', "Dietrick wishes it had my legacy."],
-    rivals: ['dietrick'],
+    rivals: ['dietrick', 'hokieGrill'],
   },
   perry: {
     name: 'Perry Place',
@@ -84,6 +84,30 @@ const CHARACTERS = {
     ],
     catchphrases: ['The rain didn\'t cause the chaos. It just made it prettier.'],
     rivals: [],
+  },
+  westEnd: {
+    name: 'West End',
+    aka: 'West End Market',
+    vibe: 'The chill, low-drama sibling everyone forgets is there until they actually need it.',
+    personality: [
+      'Weirdly unbothered by the chaos everyone else causes',
+      'Quietly resents being treated like everyone\'s backup plan instead of a first choice',
+      'Overcompensates for the lack of drama by being suspiciously, almost aggressively reliable',
+    ],
+    catchphrases: ["I'm not boring, I'm consistent.", "You only remember I exist when D2's line is out the door."],
+    rivals: [],
+  },
+  hokieGrill: {
+    name: 'Hokie Grill & Co.',
+    aka: 'Hokie Grill',
+    vibe: "Technically lives inside Owens's building and will never, ever let anyone forget it's not actually Owens.",
+    personality: [
+      'Chronic little-sibling energy, desperate to be seen as its own thing',
+      'Overcompensates with a personality Owens itself doesn\'t really have',
+      'Secretly thrilled anytime someone asks for "Hokie Grill" specifically instead of just "the Owens food court"',
+    ],
+    catchphrases: ["I live in Owens's building. I did not agree to be Owens.", "Say the whole name. Hokie. Grill. And Co."],
+    rivals: ['owens'],
   },
 };
 

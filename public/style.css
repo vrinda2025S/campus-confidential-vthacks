@@ -167,13 +167,46 @@ main {
   color: var(--ink-soft);
 }
 
-.story .meta {
+.story-footer {
   margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.story .meta {
   font-family: 'Courier New', monospace;
   font-size: 10px;
   color: var(--ink-soft);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.share-btn {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule);
+  padding: 4px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.share-btn:hover {
+  background: var(--ink);
+  color: var(--paper-raised);
+}
+
+.share-btn:disabled {
+  cursor: default;
+  background: #3d8b40;
+  color: #fff;
+  border-color: #3d8b40;
 }
 
 footer {
