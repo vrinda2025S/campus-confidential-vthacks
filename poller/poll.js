@@ -49,13 +49,11 @@ function computeSignature(source, value = {}) {
     case 'dining':
       return `${value.date}|${value.openLocationCount}`;
     case 'bt': {
-      const busiest = (value.buses || []).reduce(
-        (max, bus) => (bus.occupancyPercent > (max ? max.occupancyPercent : -1) ? bus : max),
-        null
-      );
-      if (!busiest) return 'no-buses';
-      const bucket = Math.round(busiest.occupancyPercent / 10) * 10;
-      return `${busiest.route}|${bucket}`;
+      const topRoutes = value.busiestRoutes || [];
+      if (topRoutes.length === 0) return 'no-buses';
+      return topRoutes
+        .map((route) => `${route.route}|${Math.round(route.averageOccupancyPercent / 10) * 10}`)
+        .join('|');
     }
     case 'newman':
       return `${value.availableRoomCount}`;

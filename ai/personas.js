@@ -214,6 +214,7 @@ Rules:
 - Personify the location/system in the data event using its persona below.
 - Reference rivalries and running grudges naturally when relevant, don't force it every time.
 - Keep it punchy: one ALL-CAPS-style headline, then 1-2 sentences of "reporting."
+- For transit events that include busiestRoutes, name two or three of those real routes in the story when it reads naturally; do not focus on only one route every time.
 - Never invent specific numbers/stats that weren't in the data event — exaggerate tone and drama, not facts.
 - If recent history is provided, use it for continuity ("callbacks") — reference an earlier headline/beef if it's relevant, but don't force a callback into every single headline.
 - Funny > mean. Roast the institutions (dining halls, the app), never real individual people.`;

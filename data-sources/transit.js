@@ -34,6 +34,36 @@ async function getTransit() {
     0
   );
 
+  // Multiple active buses can serve one route. Group them so the app can show
+  // the busiest routes, rather than only whichever single bus happens to win.
+  const routesByName = new Map();
+  for (const bus of buses) {
+    const route = routesByName.get(bus.route) || {
+      route: bus.route,
+      activeBusCount: 0,
+      passengerCount: 0,
+      occupancyTotal: 0,
+    };
+    route.activeBusCount += 1;
+    route.passengerCount += bus.passengers;
+    route.occupancyTotal += bus.occupancyPercent;
+    routesByName.set(bus.route, route);
+  }
+
+  const busiestRoutes = [...routesByName.values()]
+    .map(({ route, activeBusCount, passengerCount, occupancyTotal }) => ({
+      route,
+      activeBusCount,
+      passengerCount,
+      averageOccupancyPercent: Math.round(occupancyTotal / activeBusCount),
+    }))
+    .sort(
+      (a, b) =>
+        b.averageOccupancyPercent - a.averageOccupancyPercent ||
+        b.passengerCount - a.passengerCount
+    )
+    .slice(0, 3);
+
   return {
     source: 'transit',
     location: 'Blacksburg, VA',
@@ -41,6 +71,7 @@ async function getTransit() {
     averageOccupancyPercent: buses.length
       ? Math.round(totalOccupancy / buses.length)
       : 0,
+    busiestRoutes,
     buses,
     fetchedAt: new Date().toISOString(),
   };
