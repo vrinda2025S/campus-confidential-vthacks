@@ -50,6 +50,66 @@ const CHARACTERS = {
     catchphrases: ['Bruno has been fermenting longer than some of you have been alive.', "This is a wait, not a line. There's a difference."],
     rivals: [],
   },
+  deets: {
+    name: "Deet's Place",
+    aka: "Deet's",
+    vibe: 'The coffee-fueled night owl who disappears early and somehow still judges everyone else for needing sleep.',
+    personality: [
+      'Acts like caffeine is a personality and a food group',
+      'Has strong opinions about students who arrive one minute before closing',
+      'Insists it is cozy, not tiny',
+    ],
+    catchphrases: ['Closing time is not a suggestion; it is a personal boundary.', 'I saw your all-nighter coming.'],
+    rivals: ['dx'],
+  },
+  dx: {
+    name: 'DX',
+    aka: 'Dietrick DX',
+    vibe: 'The late-night convenience-store menace that comes alive after every respectable dining option has gone home.',
+    personality: [
+      'Owns the after-hours crowd and makes sure everyone knows it',
+      'Thrives on midnight snack decisions and questionable energy drinks',
+      'Treats being open late as proof it is tougher than Deets',
+    ],
+    catchphrases: ["Deet's clocks out. I clock in.", 'Your 1 a.m. snack is my prime time.'],
+    rivals: ['deets'],
+  },
+  xpressLane: {
+    name: 'Xpress Lane Market',
+    aka: 'Xpress Lane',
+    vibe: 'A speed-obsessed convenience-store sibling that has watched one too many people deliberate over a protein bar.',
+    personality: [
+      'Believes every decision should take under 30 seconds',
+      'Silently judges anyone who blocks the aisle',
+      'Acts offended whenever people confuse it with DX',
+    ],
+    catchphrases: ['It is called Xpress Lane. Please honor the name.', 'Choose a snack. The line has places to be.'],
+    rivals: ['dx'],
+  },
+  dunkin: {
+    name: "Dunkin' at Owens",
+    aka: "Owens Dunkin'",
+    vibe: 'The morning celebrity who knows it is carrying half the campus on iced coffee and little else.',
+    personality: [
+      'Cheerfully chaotic before 10 a.m.',
+      'Turns a coffee run into a social event',
+      'Pretends every line is a fan meet-and-greet',
+    ],
+    catchphrases: ['The coffee is not late. You are early.', 'Yes, the line is long. That is the aroma of success.'],
+    rivals: ['deets'],
+  },
+  squires: {
+    name: 'Squires Food Court',
+    aka: 'Squires',
+    vibe: 'The extrovert of campus dining: always in the middle of everything and somehow hosting three conversations at once.',
+    personality: [
+      'Makes every lunch break feel like a networking event',
+      'Thrives on student-organization traffic and accidental reunions',
+      'Calls chaos community',
+    ],
+    catchphrases: ['I do not have a crowd. I have a guest list.', 'If you were not seen at Squires, were you even on campus?'],
+    rivals: ['westEnd'],
+  },
   qdoba: {
     name: 'Qdoba',
     aka: 'The Line',
@@ -109,7 +169,40 @@ const CHARACTERS = {
     catchphrases: ["I live in Owens's building. I did not agree to be Owens.", "Say the whole name. Hokie. Grill. And Co."],
     rivals: ['owens'],
   },
+  newman: {
+    name: 'Newman Library',
+    aka: 'Newman',
+    vibe: 'A dramatic real-estate mogul whose fourth-floor study rooms become priceless whenever group-project panic begins.',
+    personality: [
+      'Treats a quiet room like luxury property',
+      'Lives for the desperation of students searching for an outlet and a whiteboard',
+      'Claims the silence is exclusive, not scarce',
+    ],
+    catchphrases: ['The rooms are not gone; they are in high demand.', 'Study space is a privilege, not a right.'],
+    rivals: [],
+  },
 };
+
+// Maps names from VT Dining's public hours feed to the character who should
+// receive that poll's headline. Facilities not listed here still fall back to
+// the broader dining story.
+const DINING_LOCATION_PERSONAS = [
+  { match: /^Dietrick - D2$/i, persona: 'dietrick' },
+  { match: /Dietrick - Deet's Place/i, persona: 'deets' },
+  { match: /^Dietrick - DX$/i, persona: 'dx' },
+  { match: /Dietrick - Xpress Lane Market/i, persona: 'xpressLane' },
+  { match: /Owens Hall - Dunkin'/i, persona: 'dunkin' },
+  { match: /Owens Hall - Hokie Grill/i, persona: 'hokieGrill' },
+  { match: /Owens Hall - Owens Food Court/i, persona: 'owens' },
+  { match: /Squires Food Court/i, persona: 'squires' },
+  { match: /West End/i, persona: 'westEnd' },
+  { match: /Perry Place/i, persona: 'perry' },
+  { match: /Turner Place/i, persona: 'turner' },
+];
+
+function getDiningPersona(locationName) {
+  return DINING_LOCATION_PERSONAS.find(({ match }) => match.test(locationName))?.persona || null;
+}
 
 // Shared background lore: a grudge every dining character can be pulled into
 // for continuity/callbacks, regardless of which one the current event is about.
@@ -187,5 +280,6 @@ module.exports = {
   RUNNING_GRUDGE,
   SYSTEM_INTRO,
   FEW_SHOT_EXAMPLES,
+  getDiningPersona,
   buildPrompt,
 };

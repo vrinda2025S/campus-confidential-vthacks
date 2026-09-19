@@ -4,6 +4,10 @@ const REFRESH_MS = 15000;
 const feedEl = document.getElementById('feed');
 const liveDotEl = document.getElementById('live-dot');
 const statusTextEl = document.getElementById('status-text');
+const DINING_CHARACTERS = new Set([
+  'dietrick', 'owens', 'perry', 'turner', 'deets', 'dx', 'xpressLane',
+  'dunkin', 'squires', 'westEnd', 'hokieGrill',
+]);
 
 let seenIds = new Set();
 
@@ -17,6 +21,7 @@ function relativeTime(dateString) {
 }
 
 function tagClass(source) {
+  if (DINING_CHARACTERS.has(source)) return 'dining';
   return ['dining', 'weather', 'transit', 'newman-library-rooms'].includes(source)
     ? source
     : 'default';

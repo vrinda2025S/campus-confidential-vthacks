@@ -3,6 +3,7 @@ const connectDB = require('../config/db');
 const Snapshot = require('../models/Snapshot');
 const Headline = require('../models/Headline');
 const { generateHeadline } = require('../ai/gemini');
+const { getDiningPersona } = require('../ai/personas');
 const getWeather = require('../data-sources/weather');
 const getDining = require('../data-sources/dining');
 const getTransit = require('../data-sources/transit');
@@ -19,6 +20,7 @@ const dataSources = [
 ];
 
 let pollInProgress = false;
+let diningFeatureCursor = 0;
 
 // Most-recent-last, for Gemini's continuity callbacks.
 async function getRecentHeadlineHistory() {
@@ -34,12 +36,19 @@ async function getRecentHeadlineHistory() {
 // poll that finds nothing meaningfully different doesn't get a "breaking news"
 // rewrite of the same fact (e.g. the same bus still sitting at ~93% full).
 function computeSignature(source, value = {}) {
+  if (value.dataSource === 'dining') {
+    const hours = (value.featuredLocation?.hours || [])
+      .map((period) => `${period.meal}:${period.time}`)
+      .join('|');
+    return `${value.date}|${value.featuredLocation?.name}|${hours}`;
+  }
+
   switch (source) {
     case 'weather':
       return `${value.tempF}|${value.condition}`;
     case 'dining':
       return `${value.date}|${value.openLocationCount}`;
-    case 'transit': {
+    case 'bt': {
       const busiest = (value.buses || []).reduce(
         (max, bus) => (bus.occupancyPercent > (max ? max.occupancyPercent : -1) ? bus : max),
         null
@@ -48,11 +57,45 @@ function computeSignature(source, value = {}) {
       const bucket = Math.round(busiest.occupancyPercent / 10) * 10;
       return `${busiest.route}|${bucket}`;
     }
-    case 'newman-library-rooms':
+    case 'newman':
       return `${value.availableRoomCount}`;
     default:
       return JSON.stringify(value);
   }
+}
+
+// The dining feed has several locations. Feature one open venue per polling
+// cycle so each one can have a distinct persona without creating ten Gemini
+// calls at once.
+function buildDataEvent(snapshotSource, value) {
+  if (snapshotSource === 'dining') {
+    const featuredLocations = (value.locations || [])
+      .map((location) => ({ location, persona: getDiningPersona(location.name) }))
+      .filter(({ persona }) => persona);
+
+    if (featuredLocations.length === 0) {
+      return { ...value, source: 'dining', dataSource: 'dining' };
+    }
+
+    const featured = featuredLocations[diningFeatureCursor % featuredLocations.length];
+    diningFeatureCursor += 1;
+
+    return {
+      source: featured.persona,
+      dataSource: 'dining',
+      date: value.date,
+      openLocationCount: value.openLocationCount,
+      featuredLocation: featured.location,
+    };
+  }
+
+  const personaSource = {
+    transit: 'bt',
+    weather: 'weather',
+    'newman-library-rooms': 'newman',
+  }[snapshotSource] || snapshotSource;
+
+  return { ...value, source: personaSource };
 }
 
 async function pollOnce() {
@@ -78,14 +121,14 @@ async function pollOnce() {
 
           console.log(`Saved ${name} snapshot: ${snapshot._id}`);
 
-          const dataEvent = { source: snapshot.source, ...value };
-          const signature = computeSignature(snapshot.source, value);
+          const dataEvent = buildDataEvent(snapshot.source, value);
+          const signature = computeSignature(dataEvent.source, dataEvent);
 
-          const lastHeadline = await Headline.findOne({ source: snapshot.source })
+          const lastHeadline = await Headline.findOne({ source: dataEvent.source })
             .sort({ createdAt: -1 })
             .lean();
           const lastSignature = lastHeadline
-            ? computeSignature(snapshot.source, lastHeadline.dataEvent)
+            ? computeSignature(dataEvent.source, lastHeadline.dataEvent)
             : null;
 
           if (lastSignature !== null && lastSignature === signature) {
@@ -114,7 +157,7 @@ async function pollOnce() {
           const headlineDoc = await Headline.create({
             headline: generated.headline,
             blurb: generated.blurb,
-            source: snapshot.source,
+            source: dataEvent.source,
             dataEvent,
           });
 
