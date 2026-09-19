@@ -36,7 +36,7 @@ const SOURCE_ICONS = {
 };
 
 function sourceIcon(source) {
-  return SOURCE_ICONS[source] || SOURCE_ICONS.default;
+  return SOURCE_ICONS[source] || SOURCE_ICONS[tagClass(source)] || SOURCE_ICONS.default;
 }
 
 async function shareHeadline(headline, button) {
