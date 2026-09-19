@@ -96,7 +96,7 @@ async function loadHeadlines() {
 
     if (!Array.isArray(headlines) || headlines.length === 0) {
       feedEl.innerHTML = '<div class="empty-state"><p>The presses are warming up. First headlines land within a few minutes.</p></div>';
-      setStatus('live', 'live · no headlines yet');
+      setStatus('live', 'live - no headlines yet');
       return;
     }
 
@@ -111,8 +111,7 @@ async function loadHeadlines() {
 
     feedEl.replaceChildren(fragment);
     seenIds = nextSeenIds;
-
-    setStatus('live', `live · updated ${relativeTime(new Date().toISOString())}`);
+    setStatus('live', `live - updated ${relativeTime(new Date().toISOString())}`);
   } catch (err) {
     console.error('Failed to load headlines:', err.message);
     setStatus('error', 'connection issue, retrying...');
