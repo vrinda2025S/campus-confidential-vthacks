@@ -30,6 +30,31 @@ async function getRecentHeadlineHistory() {
   return recent.reverse().map((h) => h.headline);
 }
 
+// Boils a data event down to whatever actually makes it headline-worthy, so a
+// poll that finds nothing meaningfully different doesn't get a "breaking news"
+// rewrite of the same fact (e.g. the same bus still sitting at ~93% full).
+function computeSignature(source, value = {}) {
+  switch (source) {
+    case 'weather':
+      return `${value.tempF}|${value.condition}`;
+    case 'dining':
+      return `${value.date}|${value.openLocationCount}`;
+    case 'transit': {
+      const busiest = (value.buses || []).reduce(
+        (max, bus) => (bus.occupancyPercent > (max ? max.occupancyPercent : -1) ? bus : max),
+        null
+      );
+      if (!busiest) return 'no-buses';
+      const bucket = Math.round(busiest.occupancyPercent / 10) * 10;
+      return `${busiest.route}|${bucket}`;
+    }
+    case 'newman-library-rooms':
+      return `${value.availableRoomCount}`;
+    default:
+      return JSON.stringify(value);
+  }
+}
+
 async function pollOnce() {
   if (pollInProgress) {
     console.log('Poll skipped: the previous poll is still running.');
@@ -54,6 +79,26 @@ async function pollOnce() {
           console.log(`Saved ${name} snapshot: ${snapshot._id}`);
 
           const dataEvent = { source: snapshot.source, ...value };
+          const signature = computeSignature(snapshot.source, value);
+
+          const lastHeadline = await Headline.findOne({ source: snapshot.source })
+            .sort({ createdAt: -1 })
+            .lean();
+          const lastSignature = lastHeadline
+            ? computeSignature(snapshot.source, lastHeadline.dataEvent)
+            : null;
+
+          if (lastSignature !== null && lastSignature === signature) {
+            console.log(`Skipped headline for ${name}: no meaningful change since last report.`);
+            return {
+              source: name,
+              success: true,
+              snapshotId: snapshot._id.toString(),
+              headlineGenerated: false,
+              reason: 'unchanged',
+            };
+          }
+
           const generated = await generateHeadline(dataEvent, recentHistory);
 
           if (!generated) {

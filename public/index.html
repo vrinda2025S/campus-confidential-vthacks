@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus Confidential</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <h1>CAMPUS <span class="accent">CONFIDENTIAL</span></h1>
+      <p class="tagline">Blacksburg's only unreliable source for reliable gossip</p>
+    </div>
+    <div class="status-bar">
+      <span class="live-dot" id="live-dot"></span>
+      <span id="status-text">connecting...</span>
+    </div>
+  </header>
+
+  <main>
+    <div id="feed" class="feed" aria-live="polite">
+      <div class="empty-state" id="empty-state">
+        <p>The presses are warming up. First headlines land within a few minutes.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>Auto-refreshes every 15 seconds &middot; data from live campus sources, headlines by Gemini</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
