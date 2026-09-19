@@ -75,7 +75,7 @@ router.post('/', async (req, res) => {
     res.json({ category, facts, blurb });
   } catch (error) {
     console.error('HokieAI diagnosis failed:', error.message);
-    res.status(502).json({ error: 'HokieAI is taking a quick study break. Try again.' });
+    res.status(502).json({ error: 'The Tip Line is taking a quick study break. Try again.' });
   }
 });
 

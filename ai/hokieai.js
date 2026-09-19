@@ -9,7 +9,7 @@ const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
 // bus routes, etc.) — this just adds one line of Campus Confidential attitude
 // on top, so Gemini is told not to restate or invent any of the specifics.
 async function generateHokieBlurb(question, facts) {
-  const prompt = `You are HokieAI Sidekick, a witty Virginia Tech campus companion inside Campus Confidential.
+  const prompt = `You are the Tip Line, a witty Virginia Tech campus companion inside Campus Confidential.
 
 A student just asked: "${question}"
 

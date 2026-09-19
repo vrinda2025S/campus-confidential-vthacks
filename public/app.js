@@ -276,7 +276,7 @@ async function askHokieAi(category) {
       body: JSON.stringify({ category }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'HokieAI could not respond.');
+    if (!res.ok) throw new Error(data.error || 'The Tip Line could not respond.');
 
     renderFacts(data.category, data.facts);
     if (data.blurb) addHokieAiMessage('assistant diagnosis', data.blurb);
@@ -289,7 +289,7 @@ async function askHokieAi(category) {
 
 function startHokieAiChat() {
   hokieAiChat.replaceChildren();
-  addHokieAiMessage('assistant', "Hi, I'm HokieAI. What do you want to know?");
+  addHokieAiMessage('assistant', "Hi, I'm the Tip Line. What do you want to know?");
   addHokieAiChoices(HOKIE_CATEGORIES, askHokieAi);
 }
 
