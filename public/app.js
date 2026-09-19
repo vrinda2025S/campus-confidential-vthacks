@@ -20,10 +20,16 @@ function relativeTime(dateString) {
   return `${hours}h ago`;
 }
 
+const SOURCE_ALIASES = {
+  bt: 'transit',
+  newman: 'newman-library-rooms',
+};
+
 function tagClass(source) {
   if (DINING_CHARACTERS.has(source)) return 'dining';
-  return ['dining', 'weather', 'transit', 'newman-library-rooms'].includes(source)
-    ? source
+  const resolved = SOURCE_ALIASES[source] || source;
+  return ['dining', 'weather', 'transit', 'newman-library-rooms'].includes(resolved)
+    ? resolved
     : 'default';
 }
 
