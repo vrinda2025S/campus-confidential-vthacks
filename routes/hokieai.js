@@ -4,31 +4,11 @@ const { generateHokieDiagnosis } = require('../ai/hokieai');
 
 const router = express.Router();
 
-const OPTIONS = {
-  study: {
-    label: 'Find a study spot',
-    details: {
-      quiet: 'A quiet room',
-      group: 'A group room',
-      outlets: 'Outlets and a work spot',
-    },
-  },
-  food: {
-    label: 'Find food',
-    details: {
-      fast: 'Something fast',
-      late: 'A late-night snack',
-      adventure: 'Whatever has the least drama',
-    },
-  },
-  transit: {
-    label: 'Catch a bus',
-    details: {
-      on_time: 'I am on time for once',
-      late: 'I am running late',
-      defeated: 'I am emotionally defeated already',
-    },
-  },
+const FOCUS_OPTIONS = {
+  transit: 'Live bus pulse',
+  food: 'Dining pulse',
+  study: 'Study-space pulse',
+  everything: 'Whatever is most useful',
 };
 
 async function getCampusFacts() {
@@ -51,7 +31,17 @@ async function getCampusFacts() {
       ? { openLocationCount: values.dining.openLocationCount }
       : null,
     transit: values.transit
-      ? { busiestRoutes: values.transit.busiestRoutes || [] }
+      ? {
+          busiestRoutes: values.transit.busiestRoutes || [],
+          activeBuses: (values.transit.buses || []).slice(0, 12).map((bus) => ({
+            route: bus.route,
+            atStop: bus.atStop,
+            speedMph: bus.speedMph,
+            occupancyPercent: bus.occupancyPercent,
+            latitude: bus.latitude,
+            longitude: bus.longitude,
+          })),
+        }
       : null,
     newmanRooms: values['newman-library-rooms']
       ? { availableRoomCount: values['newman-library-rooms'].availableRoomCount }
@@ -59,15 +49,31 @@ async function getCampusFacts() {
   };
 }
 
-// POST /api/hokieai with a guided set of public, non-identifying choices.
+function getLiveBusUpdates(transit, focus) {
+  if (!transit || !['transit', 'everything'].includes(focus)) return [];
+
+  return (transit.activeBuses || [])
+    .filter((bus) => bus.latitude && bus.longitude)
+    .sort((a, b) => b.occupancyPercent - a.occupancyPercent)
+    .slice(0, 4)
+    .map((bus) => ({
+      route: bus.route,
+      status: bus.atStop ? 'At a stop' : `Moving at ${bus.speedMph} mph`,
+      occupancyPercent: bus.occupancyPercent,
+      mapUrl: `https://www.google.com/maps?q=${bus.latitude},${bus.longitude}`,
+    }));
+}
+
+// POST /api/hokieai with three small, non-identifying Side Kick questions.
 router.post('/', async (req, res) => {
-  const { mission, detail, chaos } = req.body || {};
-  const selectedMission = OPTIONS[mission];
+  const { need, focus, chaos } = req.body || {};
   const chaosLevel = Number(chaos);
+  const safeNeed = typeof need === 'string' ? need.trim().replace(/\s+/g, ' ') : '';
 
   if (
-    !selectedMission ||
-    !selectedMission.details[detail] ||
+    !safeNeed ||
+    safeNeed.length > 240 ||
+    !FOCUS_OPTIONS[focus] ||
     !Number.isInteger(chaosLevel) ||
     chaosLevel < 1 ||
     chaosLevel > 10
@@ -79,14 +85,17 @@ router.post('/', async (req, res) => {
     const campusFacts = await getCampusFacts();
     const diagnosis = await generateHokieDiagnosis(
       {
-        missionLabel: selectedMission.label,
-        detailLabel: selectedMission.details[detail],
+        need: safeNeed,
+        focusLabel: FOCUS_OPTIONS[focus],
         chaos: chaosLevel,
       },
       campusFacts
     );
 
-    res.json({ diagnosis });
+    res.json({
+      diagnosis,
+      liveBusUpdates: getLiveBusUpdates(campusFacts.transit, focus),
+    });
   } catch (error) {
     console.error('HokieAI diagnosis failed:', error.message);
     res.status(502).json({ error: 'HokieAI is taking a quick study break. Try again.' });

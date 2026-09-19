@@ -158,36 +158,6 @@ const hokieAiPanel = document.getElementById('hokieai-panel');
 const hokieAiClose = document.getElementById('hokieai-close');
 const hokieAiChat = document.getElementById('hokieai-chat');
 
-const HOKIE_AI_FLOW = {
-  study: {
-    label: 'Find a study spot',
-    question: 'What are you trying to find?',
-    options: [
-      ['quiet', 'A quiet room'],
-      ['group', 'A group room'],
-      ['outlets', 'Outlets and a work spot'],
-    ],
-  },
-  food: {
-    label: 'Find food',
-    question: 'What is the dining mood?',
-    options: [
-      ['fast', 'Something fast'],
-      ['late', 'A late-night snack'],
-      ['adventure', 'Least drama possible'],
-    ],
-  },
-  transit: {
-    label: 'Catch a bus',
-    question: 'How is the commute going?',
-    options: [
-      ['on_time', 'I am on time for once'],
-      ['late', 'I am running late'],
-      ['defeated', 'Emotionally defeated'],
-    ],
-  },
-};
-
 let hokieAiAnswers = {};
 
 function addHokieAiMessage(role, text) {
@@ -220,6 +190,36 @@ function addHokieAiChoices(options, onChoice) {
   hokieAiChat.scrollTop = hokieAiChat.scrollHeight;
 }
 
+function addHokieAiTextQuestion() {
+  const form = document.createElement('form');
+  form.className = 'hokieai-text-form';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.maxLength = 240;
+  input.required = true;
+  input.placeholder = 'e.g. I need the least painful way to get to class';
+  input.setAttribute('aria-label', 'What do you need right now?');
+
+  const button = document.createElement('button');
+  button.type = 'submit';
+  button.textContent = 'Next';
+  form.append(input, button);
+  hokieAiChat.appendChild(form);
+  input.focus();
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const need = input.value.trim();
+    if (!need) return;
+    input.disabled = true;
+    button.disabled = true;
+    hokieAiAnswers.need = need;
+    addHokieAiMessage('user', need);
+    askFocus();
+  });
+}
+
 function askChaosLevel() {
   addHokieAiMessage('assistant', 'Final question: how chaotic are you feeling?');
   addHokieAiChoices(
@@ -237,11 +237,15 @@ function askChaosLevel() {
   );
 }
 
-function askDetail() {
-  const branch = HOKIE_AI_FLOW[hokieAiAnswers.mission];
-  addHokieAiMessage('assistant', branch.question);
-  addHokieAiChoices(branch.options, (value) => {
-    hokieAiAnswers.detail = value;
+function askFocus() {
+  addHokieAiMessage('assistant', 'Which live campus pulse should I pull into your result?');
+  addHokieAiChoices([
+    ['transit', 'Live buses'],
+    ['food', 'Dining'],
+    ['study', 'Study spaces'],
+    ['everything', 'Surprise me'],
+  ], (value) => {
+    hokieAiAnswers.focus = value;
     askChaosLevel();
   });
 }
@@ -249,14 +253,28 @@ function askDetail() {
 function startHokieAiChat() {
   hokieAiAnswers = {};
   hokieAiChat.replaceChildren();
-  addHokieAiMessage('assistant', 'Hi, I am HokieAI. What is your campus mission?');
-  addHokieAiChoices(
-    Object.entries(HOKIE_AI_FLOW).map(([value, branch]) => [value, branch.label]),
-    (value) => {
-      hokieAiAnswers.mission = value;
-      askDetail();
-    }
-  );
+  addHokieAiMessage('assistant', 'Hi, I am HokieAI. What do you need right now? Keep it real — I will pull in live campus updates.');
+  addHokieAiTextQuestion();
+}
+
+function addLiveBusUpdates(updates) {
+  if (!updates.length) return;
+  addHokieAiMessage('assistant', 'Live bus pulse — positions are from the public BT map right now:');
+  const list = document.createElement('div');
+  list.className = 'hokieai-bus-list';
+
+  updates.forEach((bus) => {
+    const card = document.createElement('a');
+    card.className = 'hokieai-bus-card';
+    card.href = bus.mapUrl;
+    card.target = '_blank';
+    card.rel = 'noopener noreferrer';
+    card.textContent = `${bus.route} · ${bus.status} · ${bus.occupancyPercent}% full · View map`;
+    list.appendChild(card);
+  });
+
+  hokieAiChat.appendChild(list);
+  hokieAiChat.scrollTop = hokieAiChat.scrollHeight;
 }
 
 async function requestDiagnosis() {
@@ -269,6 +287,7 @@ async function requestDiagnosis() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'HokieAI could not respond.');
     addHokieAiMessage('assistant diagnosis', data.diagnosis);
+    addLiveBusUpdates(data.liveBusUpdates || []);
   } catch (error) {
     addHokieAiMessage('assistant error', error.message);
   }

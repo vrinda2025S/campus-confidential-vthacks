@@ -25,6 +25,8 @@ async function getTransit() {
       occupancyPercent: Number(bus.percentOfCapacity) || 0,
       atStop: state.isBusAtStop === 'Y',
       speedMph: Number(state.speed) || 0,
+      latitude: Number(state.realtimeLatitude ?? state.latitude) || null,
+      longitude: Number(state.realtimeLongitude ?? state.longitude) || null,
       lastUpdated: state.version ? new Date(state.version).toISOString() : null,
     };
   });

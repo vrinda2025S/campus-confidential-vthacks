@@ -390,6 +390,51 @@ footer {
   opacity: 0.45;
 }
 
+.hokieai-text-form {
+  display: flex;
+  gap: 7px;
+}
+
+.hokieai-text-form input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--ink);
+  padding: 9px;
+  font: 13px Georgia, 'Times New Roman', serif;
+}
+
+.hokieai-text-form button {
+  border: 1px solid var(--ink);
+  padding: 8px 11px;
+  color: #fff;
+  background: var(--red);
+  font-family: 'Arial Black', Impact, sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.hokieai-bus-list {
+  display: grid;
+  gap: 6px;
+}
+
+.hokieai-bus-card {
+  display: block;
+  border: 1px solid #4d839a;
+  padding: 8px 10px;
+  color: var(--ink);
+  background: #e3f0f4;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.hokieai-bus-card:hover {
+  color: #fff;
+  background: #4d839a;
+}
+
 @media (max-width: 480px) {
   .hokieai-launcher {
     right: 14px;
