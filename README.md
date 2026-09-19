@@ -13,6 +13,7 @@ Campus Confidential turns live Virginia Tech campus data into funny, tabloid-sty
 - Sends meaningful changes to Gemini along with the Campus Confidential character cast and recent headlines.
 - Shows the latest headlines in a responsive tabloid feed that refreshes every 15 seconds.
 - Lets visitors share a headline using the device share sheet or a copy-to-clipboard fallback.
+- Includes **HokieAI Sidekick**, a branching three-question mini-chat that returns a personalized campus gossip diagnosis using current public campus facts.
 
 ## Live data sources
 

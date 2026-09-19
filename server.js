@@ -4,6 +4,7 @@ const express = require('express');
 const path = require('path');
 const connectDB = require('./config/db');
 const headlinesRouter = require('./routes/headlines');
+const hokieAiRouter = require('./routes/hokieai');
 const { startPoller } = require('./poller/poll');
 
 const app = express();
@@ -12,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/headlines', headlinesRouter);
+app.use('/api/hokieai', hokieAiRouter);
 
 async function startServer() {
   await connectDB();

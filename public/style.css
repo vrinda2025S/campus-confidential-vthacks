@@ -252,3 +252,152 @@ footer {
   font-size: 11px;
   color: var(--ink-soft);
 }
+
+.hokieai-launcher {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 10;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+  padding: 12px 18px;
+  font-family: 'Arial Black', Impact, sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.hokieai-launcher:hover {
+  background: var(--ink);
+}
+
+.hokieai-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 76px;
+  z-index: 11;
+  width: min(380px, calc(100vw - 32px));
+  max-height: min(560px, calc(100vh - 110px));
+  display: none;
+  flex-direction: column;
+  background: var(--paper-raised);
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.hokieai-panel.open {
+  display: flex;
+}
+
+.hokieai-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  color: #fff;
+  background: var(--ink);
+}
+
+.hokieai-kicker {
+  margin: 0 0 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.hokieai-header h2 {
+  margin: 0;
+  font-family: 'Arial Black', Impact, sans-serif;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.hokieai-close {
+  border: 0;
+  color: #fff;
+  background: transparent;
+  font-size: 28px;
+  line-height: 0.8;
+  cursor: pointer;
+}
+
+.hokieai-chat {
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hokieai-message {
+  max-width: 88%;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.hokieai-message.assistant {
+  align-self: flex-start;
+  background: #ece7d8;
+}
+
+.hokieai-message.user {
+  align-self: flex-end;
+  color: #fff;
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.hokieai-message.diagnosis {
+  border: 2px solid var(--gold);
+  background: #fff8dc;
+  font-weight: bold;
+}
+
+.hokieai-message.error {
+  color: #8d1f17;
+  background: #fff0ee;
+}
+
+.hokieai-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.hokieai-choices button {
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  padding: 7px 9px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.hokieai-choices button:hover:not(:disabled) {
+  color: #fff;
+  background: var(--ink);
+}
+
+.hokieai-choices button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+@media (max-width: 480px) {
+  .hokieai-launcher {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .hokieai-panel {
+    right: 16px;
+    bottom: 70px;
+  }
+}

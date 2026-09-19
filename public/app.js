@@ -152,3 +152,137 @@ async function loadHeadlines() {
 
 loadHeadlines();
 setInterval(loadHeadlines, REFRESH_MS);
+
+const hokieAiLauncher = document.getElementById('hokieai-launcher');
+const hokieAiPanel = document.getElementById('hokieai-panel');
+const hokieAiClose = document.getElementById('hokieai-close');
+const hokieAiChat = document.getElementById('hokieai-chat');
+
+const HOKIE_AI_FLOW = {
+  study: {
+    label: 'Find a study spot',
+    question: 'What are you trying to find?',
+    options: [
+      ['quiet', 'A quiet room'],
+      ['group', 'A group room'],
+      ['outlets', 'Outlets and a work spot'],
+    ],
+  },
+  food: {
+    label: 'Find food',
+    question: 'What is the dining mood?',
+    options: [
+      ['fast', 'Something fast'],
+      ['late', 'A late-night snack'],
+      ['adventure', 'Least drama possible'],
+    ],
+  },
+  transit: {
+    label: 'Catch a bus',
+    question: 'How is the commute going?',
+    options: [
+      ['on_time', 'I am on time for once'],
+      ['late', 'I am running late'],
+      ['defeated', 'Emotionally defeated'],
+    ],
+  },
+};
+
+let hokieAiAnswers = {};
+
+function addHokieAiMessage(role, text) {
+  const message = document.createElement('p');
+  message.className = `hokieai-message ${role}`;
+  message.textContent = text;
+  hokieAiChat.appendChild(message);
+  hokieAiChat.scrollTop = hokieAiChat.scrollHeight;
+}
+
+function addHokieAiChoices(options, onChoice) {
+  const choices = document.createElement('div');
+  choices.className = 'hokieai-choices';
+
+  options.forEach(([value, label]) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = label;
+    button.addEventListener('click', () => {
+      choices.querySelectorAll('button').forEach((choice) => {
+        choice.disabled = true;
+      });
+      addHokieAiMessage('user', label);
+      onChoice(value, label);
+    });
+    choices.appendChild(button);
+  });
+
+  hokieAiChat.appendChild(choices);
+  hokieAiChat.scrollTop = hokieAiChat.scrollHeight;
+}
+
+function askChaosLevel() {
+  addHokieAiMessage('assistant', 'Final question: how chaotic are you feeling?');
+  addHokieAiChoices(
+    [
+      ['1', '1 - peaceful'],
+      ['4', '4 - manageable'],
+      ['7', '7 - concerning'],
+      ['10', '10 - full goblin mode'],
+    ],
+    async (value) => {
+      hokieAiAnswers.chaos = Number(value);
+      addHokieAiMessage('assistant', 'Consulting the campus rumor mill...');
+      await requestDiagnosis();
+    }
+  );
+}
+
+function askDetail() {
+  const branch = HOKIE_AI_FLOW[hokieAiAnswers.mission];
+  addHokieAiMessage('assistant', branch.question);
+  addHokieAiChoices(branch.options, (value) => {
+    hokieAiAnswers.detail = value;
+    askChaosLevel();
+  });
+}
+
+function startHokieAiChat() {
+  hokieAiAnswers = {};
+  hokieAiChat.replaceChildren();
+  addHokieAiMessage('assistant', 'Hi, I am HokieAI. What is your campus mission?');
+  addHokieAiChoices(
+    Object.entries(HOKIE_AI_FLOW).map(([value, branch]) => [value, branch.label]),
+    (value) => {
+      hokieAiAnswers.mission = value;
+      askDetail();
+    }
+  );
+}
+
+async function requestDiagnosis() {
+  try {
+    const response = await fetch('/api/hokieai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(hokieAiAnswers),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'HokieAI could not respond.');
+    addHokieAiMessage('assistant diagnosis', data.diagnosis);
+  } catch (error) {
+    addHokieAiMessage('assistant error', error.message);
+  }
+}
+
+function setHokieAiOpen(isOpen) {
+  hokieAiPanel.classList.toggle('open', isOpen);
+  hokieAiPanel.setAttribute('aria-hidden', String(!isOpen));
+  hokieAiLauncher.setAttribute('aria-expanded', String(isOpen));
+}
+
+hokieAiLauncher.addEventListener('click', () => {
+  setHokieAiOpen(true);
+  startHokieAiChat();
+});
+
+hokieAiClose.addEventListener('click', () => setHokieAiOpen(false));
