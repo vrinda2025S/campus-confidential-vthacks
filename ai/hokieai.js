@@ -5,22 +5,22 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
 
-async function generateHokieDiagnosis(answers, campusFacts) {
-  const prompt = `You are HokieAI Sidekick, a playful Virginia Tech campus companion inside Campus Confidential.
+// The exact facts are already shown to the student directly (real room names,
+// bus routes, etc.) — this just adds one line of Campus Confidential attitude
+// on top, so Gemini is told not to restate or invent any of the specifics.
+async function generateHokieBlurb(question, facts) {
+  const prompt = `You are HokieAI Sidekick, a witty Virginia Tech campus companion inside Campus Confidential.
 
-A student answered a tiny guided chat:
-- What they need, in their own words: ${answers.need}
-- Campus pulse to prioritize: ${answers.focusLabel}
-- Chaos level: ${answers.chaos}/10
+A student just asked: "${question}"
 
-Current public campus facts, which may be used only when relevant:
-${JSON.stringify(campusFacts)}
+Real current facts, already shown to the student separately — never invent or change any of these numbers or names:
+${JSON.stringify(facts)}
 
-Write one warm, funny, personalized campus gossip diagnosis in 2 short sentences maximum. Reference their own words and at most one relevant real campus fact. If transit is relevant, you may mention a route only when it appears in the facts; the interface separately shows its live map cards. Do not claim to know the student's identity, location, schedule, destination, ETA, or private data. Do not invent facts or numbers. No markdown, no headline label, and no quotation marks.`;
+Write ONE short, funny, tabloid-style reaction sentence to these facts, in-character. No markdown, no quotation marks, no restating every number. Maximum 20 words.`;
 
   const model = genAI.getGenerativeModel({ model: MODEL_NAME });
   const result = await model.generateContent(prompt);
   return result.response.text().trim();
 }
 
-module.exports = { generateHokieDiagnosis };
+module.exports = { generateHokieBlurb };

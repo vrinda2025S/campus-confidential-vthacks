@@ -158,7 +158,12 @@ const hokieAiPanel = document.getElementById('hokieai-panel');
 const hokieAiClose = document.getElementById('hokieai-close');
 const hokieAiChat = document.getElementById('hokieai-chat');
 
-let hokieAiAnswers = {};
+const HOKIE_CATEGORIES = [
+  ['study', 'Open study rooms?'],
+  ['dining', "What's open to eat?"],
+  ['transit', 'How are the buses?'],
+  ['weather', "What's the weather?"],
+];
 
 function addHokieAiMessage(role, text) {
   const message = document.createElement('p');
@@ -181,7 +186,7 @@ function addHokieAiChoices(options, onChoice) {
         choice.disabled = true;
       });
       addHokieAiMessage('user', label);
-      onChoice(value, label);
+      onChoice(value);
     });
     choices.appendChild(button);
   });
@@ -190,107 +195,102 @@ function addHokieAiChoices(options, onChoice) {
   hokieAiChat.scrollTop = hokieAiChat.scrollHeight;
 }
 
-function addHokieAiTextQuestion() {
-  const form = document.createElement('form');
-  form.className = 'hokieai-text-form';
+// One card with the real specifics (actual room names, dining spots, etc.) —
+// this is the direct answer. Gemini's line is flavor on top, never the source of truth.
+function addFactCard(title, tags) {
+  const card = document.createElement('div');
+  card.className = 'hokieai-fact-card';
 
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.maxLength = 240;
-  input.required = true;
-  input.placeholder = 'e.g. I need the least painful way to get to class';
-  input.setAttribute('aria-label', 'What do you need right now?');
+  const heading = document.createElement('p');
+  heading.className = 'hokieai-fact-title';
+  heading.textContent = title;
+  card.appendChild(heading);
 
-  const button = document.createElement('button');
-  button.type = 'submit';
-  button.textContent = 'Next';
-  form.append(input, button);
-  hokieAiChat.appendChild(form);
-  input.focus();
+  if (tags.length) {
+    const tagWrap = document.createElement('div');
+    tagWrap.className = 'hokieai-fact-tags';
+    tags.forEach((tagText) => {
+      const el = document.createElement('span');
+      el.className = 'hokieai-fact-tag';
+      el.textContent = tagText;
+      tagWrap.appendChild(el);
+    });
+    card.appendChild(tagWrap);
+  }
 
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const need = input.value.trim();
-    if (!need) return;
-    input.disabled = true;
-    button.disabled = true;
-    hokieAiAnswers.need = need;
-    addHokieAiMessage('user', need);
-    askFocus();
-  });
+  hokieAiChat.appendChild(card);
+  hokieAiChat.scrollTop = hokieAiChat.scrollHeight;
 }
 
-function askChaosLevel() {
-  addHokieAiMessage('assistant', 'Final question: how chaotic are you feeling?');
-  addHokieAiChoices(
-    [
-      ['1', '1 - peaceful'],
-      ['4', '4 - manageable'],
-      ['7', '7 - concerning'],
-      ['10', '10 - full goblin mode'],
-    ],
-    async (value) => {
-      hokieAiAnswers.chaos = Number(value);
-      addHokieAiMessage('assistant', 'Consulting the campus rumor mill...');
-      await requestDiagnosis();
-    }
-  );
-}
-
-function askFocus() {
-  addHokieAiMessage('assistant', 'Which live campus pulse should I pull into your result?');
-  addHokieAiChoices([
-    ['transit', 'Live buses'],
-    ['food', 'Dining'],
-    ['study', 'Study spaces'],
-    ['everything', 'Surprise me'],
-  ], (value) => {
-    hokieAiAnswers.focus = value;
-    askChaosLevel();
-  });
-}
-
-function startHokieAiChat() {
-  hokieAiAnswers = {};
-  hokieAiChat.replaceChildren();
-  addHokieAiMessage('assistant', 'Hi, I am HokieAI. What do you need right now? Keep it real — I will pull in live campus updates.');
-  addHokieAiTextQuestion();
-}
-
-function addLiveBusUpdates(updates) {
-  if (!updates.length) return;
-  addHokieAiMessage('assistant', 'Live bus pulse — positions are from the public BT map right now:');
+function addFactList(items) {
   const list = document.createElement('div');
-  list.className = 'hokieai-bus-list';
-
-  updates.forEach((bus) => {
-    const card = document.createElement('a');
-    card.className = 'hokieai-bus-card';
-    card.href = bus.mapUrl;
-    card.target = '_blank';
-    card.rel = 'noopener noreferrer';
-    card.textContent = `${bus.route} · ${bus.status} · ${bus.occupancyPercent}% full · View map`;
-    list.appendChild(card);
+  list.className = 'hokieai-fact-list';
+  items.forEach((text) => {
+    const item = document.createElement('div');
+    item.className = 'hokieai-fact-item';
+    item.textContent = text;
+    list.appendChild(item);
   });
-
   hokieAiChat.appendChild(list);
   hokieAiChat.scrollTop = hokieAiChat.scrollHeight;
 }
 
-async function requestDiagnosis() {
+function renderFacts(category, facts) {
+  if (!facts) return;
+
+  if (category === 'study') {
+    const count = facts.availableRoomCount || 0;
+    addFactCard(`${count} room${count === 1 ? '' : 's'} open right now`, facts.availableRooms);
+    return;
+  }
+
+  if (category === 'dining') {
+    const count = facts.openLocationCount || 0;
+    addFactCard(`${count} spot${count === 1 ? '' : 's'} open right now`, facts.locations);
+    return;
+  }
+
+  if (category === 'transit') {
+    if (!facts.buses.length) {
+      addFactList(['No buses currently reporting.']);
+      return;
+    }
+    addFactList(facts.buses.map((bus) => `${bus.route} · ${bus.occupancyPercent}% full · ${bus.status}`));
+    return;
+  }
+
+  if (category === 'weather') {
+    addFactList([`${facts.tempF}°F · ${facts.condition} · wind ${facts.windSpeed}`]);
+  }
+}
+
+function addAskAgainButton() {
+  addHokieAiChoices([['again', 'Ask something else']], startHokieAiChat);
+}
+
+async function askHokieAi(category) {
   try {
-    const response = await fetch('/api/hokieai', {
+    const res = await fetch('/api/hokieai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(hokieAiAnswers),
+      body: JSON.stringify({ category }),
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'HokieAI could not respond.');
-    addHokieAiMessage('assistant diagnosis', data.diagnosis);
-    addLiveBusUpdates(data.liveBusUpdates || []);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'HokieAI could not respond.');
+
+    renderFacts(data.category, data.facts);
+    if (data.blurb) addHokieAiMessage('assistant diagnosis', data.blurb);
   } catch (error) {
     addHokieAiMessage('assistant error', error.message);
   }
+
+  addAskAgainButton();
+}
+
+function startHokieAiChat() {
+  hokieAiChat.replaceChildren();
+  addHokieAiMessage('assistant', "Hi, I'm HokieAI. What do you want to know?");
+  addHokieAiChoices(HOKIE_CATEGORIES, askHokieAi);
 }
 
 function setHokieAiOpen(isOpen) {

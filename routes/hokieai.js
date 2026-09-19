@@ -1,101 +1,78 @@
 const express = require('express');
 const Snapshot = require('../models/Snapshot');
-const { generateHokieDiagnosis } = require('../ai/hokieai');
+const { generateHokieBlurb } = require('../ai/hokieai');
 
 const router = express.Router();
 
-const FOCUS_OPTIONS = {
-  transit: 'Live bus pulse',
-  food: 'Dining pulse',
-  study: 'Study-space pulse',
-  everything: 'Whatever is most useful',
+const CATEGORY_SOURCE = {
+  study: 'newman-library-rooms',
+  dining: 'dining',
+  transit: 'transit',
+  weather: 'weather',
 };
 
-async function getCampusFacts() {
-  const sources = ['weather', 'dining', 'transit', 'newman-library-rooms'];
-  const snapshots = await Promise.all(
-    sources.map((source) =>
-      Snapshot.findOne({ source }).sort({ timestamp: -1 }).lean()
-    )
-  );
+const CATEGORY_QUESTIONS = {
+  study: 'Are there any open study rooms right now?',
+  dining: "What's open to eat right now?",
+  transit: 'How are the buses running right now?',
+  weather: "What's the weather like right now?",
+};
 
-  const values = Object.fromEntries(
-    sources.map((source, index) => [source, snapshots[index]?.value || null])
-  );
-
-  return {
-    weather: values.weather
-      ? { tempF: values.weather.tempF, condition: values.weather.condition }
-      : null,
-    dining: values.dining
-      ? { openLocationCount: values.dining.openLocationCount }
-      : null,
-    transit: values.transit
-      ? {
-          busiestRoutes: values.transit.busiestRoutes || [],
-          activeBuses: (values.transit.buses || []).slice(0, 12).map((bus) => ({
-            route: bus.route,
-            atStop: bus.atStop,
-            speedMph: bus.speedMph,
-            occupancyPercent: bus.occupancyPercent,
-            latitude: bus.latitude,
-            longitude: bus.longitude,
-          })),
-        }
-      : null,
-    newmanRooms: values['newman-library-rooms']
-      ? { availableRoomCount: values['newman-library-rooms'].availableRoomCount }
-      : null,
-  };
+function buildFacts(category, value) {
+  switch (category) {
+    case 'study':
+      return {
+        availableRoomCount: value.availableRoomCount,
+        availableRooms: value.availableRooms || [],
+      };
+    case 'dining':
+      return {
+        openLocationCount: value.openLocationCount,
+        locations: (value.locations || []).map((location) => location.name),
+      };
+    case 'transit': {
+      const buses = (value.buses || [])
+        .slice()
+        .sort((a, b) => b.occupancyPercent - a.occupancyPercent)
+        .slice(0, 5)
+        .map((bus) => ({
+          route: bus.route,
+          occupancyPercent: bus.occupancyPercent,
+          status: bus.atStop ? 'at a stop' : `moving at ${bus.speedMph} mph`,
+        }));
+      return { activeBusCount: value.activeBusCount, buses };
+    }
+    case 'weather':
+      return { tempF: value.tempF, condition: value.condition, windSpeed: value.windSpeed };
+    default:
+      return null;
+  }
 }
 
-function getLiveBusUpdates(transit, focus) {
-  if (!transit || !['transit', 'everything'].includes(focus)) return [];
-
-  return (transit.activeBuses || [])
-    .filter((bus) => bus.latitude && bus.longitude)
-    .sort((a, b) => b.occupancyPercent - a.occupancyPercent)
-    .slice(0, 4)
-    .map((bus) => ({
-      route: bus.route,
-      status: bus.atStop ? 'At a stop' : `Moving at ${bus.speedMph} mph`,
-      occupancyPercent: bus.occupancyPercent,
-      mapUrl: `https://www.google.com/maps?q=${bus.latitude},${bus.longitude}`,
-    }));
-}
-
-// POST /api/hokieai with three small, non-identifying Side Kick questions.
+// POST /api/hokieai — one category in, one direct answer out.
 router.post('/', async (req, res) => {
-  const { need, focus, chaos } = req.body || {};
-  const chaosLevel = Number(chaos);
-  const safeNeed = typeof need === 'string' ? need.trim().replace(/\s+/g, ' ') : '';
+  const { category } = req.body || {};
+  const source = CATEGORY_SOURCE[category];
 
-  if (
-    !safeNeed ||
-    safeNeed.length > 240 ||
-    !FOCUS_OPTIONS[focus] ||
-    !Number.isInteger(chaosLevel) ||
-    chaosLevel < 1 ||
-    chaosLevel > 10
-  ) {
-    return res.status(400).json({ error: 'Please complete the HokieAI questions.' });
+  if (!source) {
+    return res.status(400).json({ error: 'Pick one of: study, dining, transit, weather.' });
   }
 
   try {
-    const campusFacts = await getCampusFacts();
-    const diagnosis = await generateHokieDiagnosis(
-      {
-        need: safeNeed,
-        focusLabel: FOCUS_OPTIONS[focus],
-        chaos: chaosLevel,
-      },
-      campusFacts
-    );
+    const snapshot = await Snapshot.findOne({ source }).sort({ timestamp: -1 }).lean();
 
-    res.json({
-      diagnosis,
-      liveBusUpdates: getLiveBusUpdates(campusFacts.transit, focus),
-    });
+    if (!snapshot?.value) {
+      return res.json({
+        category,
+        facts: null,
+        blurb: 'No live data yet for that one — check back in a few minutes.',
+      });
+    }
+
+    const facts = buildFacts(category, snapshot.value);
+    const blurb = await generateHokieBlurb(CATEGORY_QUESTIONS[category], facts);
+
+    res.json({ category, facts, blurb });
   } catch (error) {
     console.error('HokieAI diagnosis failed:', error.message);
     res.status(502).json({ error: 'HokieAI is taking a quick study break. Try again.' });

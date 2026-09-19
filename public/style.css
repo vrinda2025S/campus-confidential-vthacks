@@ -390,36 +390,43 @@ footer {
   opacity: 0.45;
 }
 
-.hokieai-text-form {
-  display: flex;
-  gap: 7px;
+.hokieai-fact-card {
+  border: 2px solid var(--gold);
+  background: #fff8dc;
+  padding: 10px 12px;
 }
 
-.hokieai-text-form input {
-  min-width: 0;
-  flex: 1;
-  border: 1px solid var(--ink);
-  padding: 9px;
-  font: 13px Georgia, 'Times New Roman', serif;
-}
-
-.hokieai-text-form button {
-  border: 1px solid var(--ink);
-  padding: 8px 11px;
-  color: #fff;
-  background: var(--red);
-  font-family: 'Arial Black', Impact, sans-serif;
+.hokieai-fact-title {
+  margin: 0 0 8px;
+  font-family: 'Courier New', monospace;
   font-size: 11px;
-  cursor: pointer;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink);
 }
 
-.hokieai-bus-list {
+.hokieai-fact-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hokieai-fact-tag {
+  background: var(--ink);
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 2px;
+}
+
+.hokieai-fact-list {
   display: grid;
   gap: 6px;
 }
 
-.hokieai-bus-card {
-  display: block;
+.hokieai-fact-item {
   border: 1px solid #4d839a;
   padding: 8px 10px;
   color: var(--ink);
@@ -427,12 +434,6 @@ footer {
   font-family: 'Courier New', monospace;
   font-size: 11px;
   line-height: 1.35;
-  text-decoration: none;
-}
-
-.hokieai-bus-card:hover {
-  color: #fff;
-  background: #4d839a;
 }
 
 @media (max-width: 480px) {
